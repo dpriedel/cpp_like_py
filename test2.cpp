@@ -19,7 +19,7 @@
 #include <iostream>
 #include <string>
 
-#include "test.h"
+#include "py_vector.h"
 
 int main(int argc, char *argv[])
 {
@@ -32,17 +32,24 @@ int main(int argc, char *argv[])
     // how about some c++ now
     // see Bartek's coding blog vor article on std::variant
     
-    py_list<std::string, int, float> like_a_list; 
-    py_list<int, std::string, float> like_a_list2{3, "ab", 5, 3.4f}; 
+    py_vector<std::string, int, float> like_a_list; 
+    py_vector<int, std::string, float> like_a_list2{3, "ab", 5, 3.4f}; 
 
-    // lambda visitor
-    
     like_a_list.print_list(std::cout);
     like_a_list2.print_list(std::cout);
     
-    py_list<int, std::string, float> like_a_list3{std::move(like_a_list2)}; 
+    py_vector<int, std::string, float> like_a_list3{std::move(like_a_list2)}; 
     like_a_list2.print_list(std::cout);
     like_a_list3.print_list(std::cout);
      
+    py_vector<int, std::string, float> like_a_list4; 
+    like_a_list4.print_list(std::cout);
+
+    like_a_list4 = like_a_list3;
+    like_a_list4.print_list(std::cout);
+
+    like_a_list3.append(like_a_list4);
+    like_a_list3.print_list(std::cout);
+
     return 0;
 }

@@ -1,7 +1,7 @@
 /*
  * =====================================================================================
  *
- *       Filename:  py_list.h
+ *       Filename:  py_vector.h
  *
  *    Description:  python-like list for C++17
  *
@@ -17,33 +17,35 @@
  */
 
 
-#ifndef  py_list_INC
-#define  py_list_INC
+#ifndef  py_vector_INC
+#define  py_vector_INC
 
-#include <iosfwd>
-#include <vector>
+#include <algorithm>
+#include <iostream>
+#include <iterator>
 #include <variant>
+#include <vector>
 /*
  * =====================================================================================
- *        Class:  py_list
+ *        Class:  py_vector
  *  Description:  provides a Python-like list class for C++
  * =====================================================================================
  */
 
 template <typename ...Ts>
-class py_list
+class py_vector
 {
     public:
 
         using pylist_t = std::vector<std::variant<Ts...>>;
 
         /* ====================  LIFECYCLE     ======================================= */
-        py_list () { }                                                  /* constructor */
+        py_vector () { }                                                  /* constructor */
         template<class ...Args>
-        py_list (Args ...args) : the_list_{(args) ...} { }              /* constructor */
+        py_vector (Args ...args) : the_list_{(args) ...} { }              /* constructor */
 
-        py_list(const py_list& rhs) : the_list_{rhs.the_list_} { }
-        py_list(py_list&& rhs) : the_list_{std::move(rhs.the_list_)} { }
+        py_vector(const py_vector& rhs) : the_list_{rhs.the_list_} { }
+        py_vector(py_vector&& rhs) : the_list_{std::move(rhs.the_list_)} { }
 
         /* ====================  ACCESSORS     ======================================= */
 
@@ -55,6 +57,7 @@ class py_list
         void print_list(std::ostream& out)
         {
             auto print_item([&out](const auto& e) { out << e << ", "; });
+            //TODO: fix this so it doesn't have a trailing ','.
             
             out << '[';
 
@@ -65,8 +68,30 @@ class py_list
         }
 
         /* ====================  MUTATORS      ======================================= */
-
+        
+        py_vector& append(const py_vector& rhs)
+        {
+            if (this != & rhs)
+            {
+                std::copy(rhs.the_list_.begin(), rhs.the_list_.end(), std::back_inserter(the_list_));
+            }
+            return *this;
+        }
         /* ====================  OPERATORS     ======================================= */
+
+        py_vector& operator=(const py_vector& rhs)
+        {
+            if (this != &rhs)
+                the_list_ = rhs.the_list_;
+            return *this;
+        }
+
+        py_vector& operator=(py_vector&& rhs)
+        {
+            if (this != &rhs)
+                the_list_ = std::move(rhs.the_list_);
+            return *this;
+        }
 
     protected:
         /* ====================  METHODS       ======================================= */
@@ -79,6 +104,6 @@ class py_list
         /* ====================  DATA MEMBERS  ======================================= */
         pylist_t the_list_;
 
-}; /* ----------  end of template class py_list  ---------- */
+}; /* ----------  end of template class py_vector  ---------- */
 
-#endif   /* ----- #ifndef py_list_INC  ----- */
+#endif   /* ----- #ifndef py_vector_INC  ----- */
