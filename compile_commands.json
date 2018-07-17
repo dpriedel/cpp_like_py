@@ -1,0 +1,22 @@
+[
+    {
+        "arguments": [
+            "c++",
+            "-c",
+            "-x",
+            "-O0",
+            "-g3",
+            "-I/extra/gcc/gcc-8/include/c++/8.1.0/",
+            "-I/home/dpriedel/projects/py_like_c++/",
+            "-std=c++17",
+            "-D_DEBUG",
+            "-fPIC",
+            "-march=native",
+            "-o",
+            "test",
+            "test.cpp"
+        ],
+        "directory": "/home/dpriedel/projects/py_like_c++/",
+        "file": "test2.cpp"
+    }
+]
