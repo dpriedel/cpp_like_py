@@ -35,21 +35,47 @@ int main(int argc, char *argv[])
     py_vector<std::string, int, float> like_a_list; 
     py_vector<int, std::string, float> like_a_list2{3, "ab", 5, 3.4f}; 
 
+    std::cout << "like_a_list.  should be empty.\n";
     like_a_list.print_list(std::cout);
+
+    std::cout << "like_a_list2.  should be [3, ab, 5, 3,4].\n";
     like_a_list2.print_list(std::cout);
     
     py_vector<int, std::string, float> like_a_list3{std::move(like_a_list2)}; 
+
+    std::cout << "like_a_list2.  should be empty after move ctor.\n";
     like_a_list2.print_list(std::cout);
+
+    std::cout << "like_a_list3.  should be [3, ab, 5, 3,4].\n";
     like_a_list3.print_list(std::cout);
      
     py_vector<int, std::string, float> like_a_list4; 
+
+    std::cout << "like_a_list4.  should be empty.\n";
     like_a_list4.print_list(std::cout);
 
     like_a_list4 = like_a_list3;
+
+    std::cout << "like_a_list4.  should be [3, ab, 5, 3,4] after assignment.\n";
     like_a_list4.print_list(std::cout);
 
     like_a_list3.append(like_a_list4);
+
+    std::cout << "like_a_list3.  should be [3, ab, 5, 3,4, 3, ab, 5, 3.4] after append.\n";
     like_a_list3.print_list(std::cout);
+
+    py_vector<int, std::string, float> like_a_list5; 
+
+    std::cout << "like_a_list5.  should be empty.\n";
+    like_a_list5.print_list(std::cout);
+
+    like_a_list5 += like_a_list4;
+    std::cout << "like_a_list5.  should be [3, ab, 5, 3,4] after +=.\n";
+    like_a_list5.print_list(std::cout);
+
+    like_a_list5.append('c');
+    std::cout << "like_a_list5.  should be [3, ab, 5, 3,4, c] after append.\n";
+    like_a_list5.print_list(std::cout);
 
     return 0;
 }

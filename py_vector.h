@@ -77,6 +77,14 @@ class py_vector
             }
             return *this;
         }
+
+        template<typename T>
+        py_vector& append(const T& element)
+        {
+            the_list_.emplace_back(element);
+            return *this;
+        }
+
         /* ====================  OPERATORS     ======================================= */
 
         py_vector& operator=(const py_vector& rhs)
@@ -90,6 +98,13 @@ class py_vector
         {
             if (this != &rhs)
                 the_list_ = std::move(rhs.the_list_);
+            return *this;
+        }
+
+        py_vector& operator+=(const py_vector& rhs)
+        {
+            if (this != &rhs)
+                this->append(rhs);
             return *this;
         }
 
