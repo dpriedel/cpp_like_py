@@ -186,6 +186,12 @@ class py_vector
             return *this;
         }
 
+        py_vector& erase(std::size_t which)
+        {
+            the_list_.erase(&the_list_[which], &the_list_[which + 1]);
+            return *this;
+        }
+
         /* ====================  OPERATORS     ======================================= */
 
         py_vector& operator=(const py_vector& rhs)
@@ -195,12 +201,27 @@ class py_vector
             return *this;
         }
 
-        template<typename U>
+        template<class U,
+            typename = std::enable_if_t<hana::equal(hana::intersection(types_set_, U::types_set_), U::types_set_)>>
         py_vector& operator=(const U& rhs)
         {
-            // let's make sure all the types from rhs are available here.
+            // we can not simply copy the variant elements from the rhs vector, we need to use
+            // our own type of variant elements which, thanks to check above, we know can handle
+            // all the types possible in rhs.
+           
+            // a little bit of exception safety.
             
+            pylist_t new_values;
+            value_type elem;
+            auto get_value([&new_values, &elem](const auto& e){ elem = e ; }); 
 
+            for (const auto& r_element : rhs.the_list_)
+            {
+                std::visit(get_value, r_element);
+                new_values.push_back(elem);
+            }
+            
+            std::swap(this->the_list_, new_values);
             return *this;
         }
 
