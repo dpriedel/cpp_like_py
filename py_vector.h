@@ -186,11 +186,11 @@ class py_vector
             return *this;
         }
 
-        py_vector& erase(std::size_t which)
-        {
-            the_list_.erase(&the_list_[which], &the_list_[which + 1]);
-            return *this;
-        }
+//        py_vector& erase(std::size_t which)
+//        {
+//            the_list_.erase(&the_list_[which], &the_list_[which + 1]);
+//            return *this;
+//        }
 
         /* ====================  OPERATORS     ======================================= */
 
