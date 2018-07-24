@@ -7,7 +7,7 @@
             "-O0",
             "-g3",
             "-I/extra/gcc/gcc-8/include/c++/8.1.0/",
-            "-I/home/dpriedel/projects/py_like_cpp/",
+            "-I/home/dpriedel/projects/cpp_like_py/",
             "-std=c++17",
             "-D_DEBUG",
             "-fPIC",
@@ -16,7 +16,7 @@
             "test2",
             "test2.cpp"
         ],
-        "directory": "/home/dpriedel/projects/py_like_cpp/",
+        "directory": "/home/dpriedel/projects/cpp_like_py/",
         "file": "test2.cpp"
     },
     {
@@ -27,7 +27,7 @@
             "-O0",
             "-g3",
             "-I/extra/gcc/gcc-8/include/c++/8.1.0/",
-            "-I/home/dpriedel/projects/py_like_cpp/",
+            "-I/home/dpriedel/projects/cpp_like_py/",
             "-std=c++17",
             "-D_DEBUG",
             "-fPIC",
@@ -36,7 +36,7 @@
             "test2",
             "test2.cpp"
         ],
-        "directory": "/home/dpriedel/projects/py_like_cpp/",
+        "directory": "/home/dpriedel/projects/cpp_like_py/",
         "file": "py_vector.h"
     }
 ]
