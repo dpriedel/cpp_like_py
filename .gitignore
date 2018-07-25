@@ -1,2 +1,6 @@
+# anything generated here
+/Debug*
+
 // our test executable
 test2
+Unit_Test

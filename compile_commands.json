@@ -4,39 +4,21 @@
             "c++",
             "-c",
             "-x",
-            "-O0",
-            "-g3",
-            "-I/extra/gcc/gcc-8/include/c++/8.1.0/",
-            "-I/home/dpriedel/projects/cpp_like_py/",
-            "-std=c++17",
-            "-D_DEBUG",
-            "-fPIC",
-            "-march=native",
-            "-o",
-            "test2",
-            "test2.cpp"
-        ],
-        "directory": "/home/dpriedel/projects/cpp_like_py/",
-        "file": "test2.cpp"
-    },
-    {
-        "arguments": [
             "c++",
-            "-c",
-            "-x",
             "-O0",
             "-g3",
-            "-I/extra/gcc/gcc-8/include/c++/8.1.0/",
-            "-I/home/dpriedel/projects/cpp_like_py/",
             "-std=c++17",
             "-D_DEBUG",
             "-fPIC",
+            "-I/home/dpriedel/projects/cpp_like_py",
+            "-I/usr/local/include",
+            "-I/extra/boost/boost-1.67_gcc-8",
             "-march=native",
             "-o",
-            "test2",
+            "Debug_unit/test2.o",
             "test2.cpp"
         ],
-        "directory": "/home/dpriedel/projects/cpp_like_py/",
-        "file": "py_vector.h"
+        "directory": "/home/dpriedel/projects/cpp_like_py",
+        "file": "test2.cpp"
     }
 ]
