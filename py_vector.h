@@ -31,35 +31,15 @@
 
 namespace hana = boost::hana;
 
-/* #include <boost/hana/experimental/printable.hpp> */
-
-
 // let's try some template metaprogramming using boost Hana.
-// we need a metafunction to tell us whether or not list B
-// is a proper subset of list A so we know whether or not we
-// can safely do py_vector copy ctors and assigments when the 
+// we need to be able to tell whether or not type list B
+// is a proper subset of type list A so we know whether or not we
+// can safely do py_vector copy ctors, assigments and other operation when the 
 // py_vectors differ in the types they can hold.
 
 // the approach chosen is to use set operations
-// if the length of the intersection of the sets representing the type lists
-// used by each py_vector is equal to the length of the 'other' py_vector
-// then the members of the 'other' py_vector can be safely used by this py_vector.
-
-//https://lists.boost.org/boost-users/2007/06/28577.php
-//Than you for the quick reply :) Now I reimplemented 
-//intersect by converting the type sequences to mpl::set 
-//and do a mpl::has_key instead of mpl::contains: 
-//template <typename seq1, typename seq2> 
-//struct intersect 
-//{ 
-//  typedef typename copy<seq2 
-//     , inserter< set<>, insert< _1, _2 > > 
-//>::type set_seq2; 
-//  typedef typename copy_if<seq1 
-//     , has_key <set_seq2, _1> 
-//     , back_inserter < vector<> > 
-//>::type type; 
-//}; 
+// if the intersection of type sets A and B equals type set B then
+// we know all the elements of the 'other' py_vector can be held by this py_vector.
 
 
 /*
@@ -68,6 +48,12 @@ namespace hana = boost::hana;
  *  Description:  provides a Python-like list class for C++
  * =====================================================================================
  */
+
+// from: http://filipjaniszewski.com/2017/01/27/c17-variants
+// comes this syntax which let's me construct a new variant of
+// the proper type.
+//
+// using T = std::remove_cv_t<std::remove_reference_t<decltype(val)>>;
 
 template<typename ...Ts>
 class py_vector
@@ -107,24 +93,29 @@ class py_vector
             // our own type of variant elements which, thanks to check above, we know can handle
             // all the types possible in rhs.
            
-            value_type elem;
-            auto get_value([this, &elem](const auto& e){ elem = e ; }); 
+            auto copy_value([this](auto&& e)
+            {
+                using X = std::remove_cv_t<std::remove_reference_t<decltype(e)>>;
+                value_type new_elem{std::in_place_type<X>, e};
+                this->the_list_.push_back(new_elem);
+             }); 
 
             for (const auto& r_element : rhs.the_list_)
             {
-                std::visit(get_value, r_element);
-                this->the_list_.push_back(elem);
+                std::visit(copy_value, r_element);
+             
             }
         }
         template<typename ...Us> friend class py_vector;
 
         /* ====================  ACCESSORS     ======================================= */
 
-        auto len(void) const { return the_list_.size(); }
+        auto size(void) const { return the_list_.size(); }
         auto begin() const { return the_list_.begin(); }
         auto cbegin() const { return the_list_.cbegin(); }
         auto end() const { return the_list_.end(); }
         auto cend() const { return the_list_.cend(); }
+        auto empty() const { return  the_list_.empty(); }
 
         void print_list(std::ostream& out) const
         {
@@ -212,15 +203,20 @@ class py_vector
             // a little bit of exception safety.
             
             pylist_t new_values;
-            value_type elem;
-            auto get_value([&new_values, &elem](const auto& e){ elem = e ; }); 
+            
+            auto copy_value([&new_values](auto&& e)
+            {
+                using X = std::remove_cv_t<std::remove_reference_t<decltype(e)>>;
+                value_type new_elem{std::in_place_type<X>, e};
+                new_values.push_back(new_elem);
+             }); 
 
             for (const auto& r_element : rhs.the_list_)
             {
-                std::visit(get_value, r_element);
-                new_values.push_back(elem);
+                std::visit(copy_value, r_element);
+             
             }
-            
+
             std::swap(this->the_list_, new_values);
             return *this;
         }
@@ -255,6 +251,18 @@ class py_vector
         const value_type& operator[](int index) const
         {
             return the_list_[index];
+        }
+
+        bool operator==(const py_vector& rhs)
+        {
+            return the_list_ == rhs.the_list_;
+        }
+
+        template<class U,
+            typename = std::enable_if_t<hana::equal(hana::intersection(types_set_, U::types_set_), U::types_set_)>>
+        bool operator==(const U& rhs)
+        {
+            return the_list_ == rhs.the_list_;
         }
 
     protected:
