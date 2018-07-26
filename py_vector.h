@@ -21,11 +21,14 @@
 #define  py_vector_INC
 
 #include <algorithm>
+#include <functional>
 #include <iostream>
 #include <iterator>
+#include <sstream>
+#include <type_traits>
+#include <typeinfo>
 #include <variant>
 #include <vector>
-#include <functional>
 
 #include <boost/hana.hpp>
 
@@ -58,16 +61,17 @@ namespace hana = boost::hana;
 template<typename ...Ts>
 class py_vector
 {
-    public:
+    private:
 
         static constexpr inline auto types_list_ = hana::to_tuple(hana::tuple_t<Ts...>);
         static constexpr inline auto types_set_ = hana::make_set(hana::type_c<Ts>...);
         
+        const int MAX_LEN_FOR_QUICK_COMPARE = 20;
+
+    public:
+
         using value_type = std::variant<Ts...>;
         using pylist_t = std::vector<value_type>;
-
-//        template <std::size_t N>
-//        using v_type = typename std::variant_alternative<N, std::variant<Ts...>>::type;
 
         /* ====================  LIFECYCLE     ======================================= */
         py_vector () { }                                                  /* constructor */
@@ -120,14 +124,35 @@ class py_vector
         void print_list(std::ostream& out) const
         {
             auto print_item([&out](const auto& e) { out << e << ", "; });
+            auto print_just_item([&out](const auto& e) { out << e ; });
             //TODO: fix this so it doesn't have a trailing ','.
             
             out << '[';
 
-            for (const auto& e : the_list_)
+            int x{1};
+            for (const auto e : the_list_)
+            {
+                if (x >= the_list_.size())
+                {
+                    break;
+                }
                 std::visit(print_item, e);
+                ++x;
+            }
+
+            if (! the_list_.empty())
+            {
+                std::visit(print_just_item, the_list_.back());
+            }
 
             out << "]\n";
+        }
+
+        std::string to_string() const
+        {
+            std::ostringstream out;
+            print_list(out);
+            return out.str();
         }
 
         // half open range
@@ -253,16 +278,52 @@ class py_vector
             return the_list_[index];
         }
 
-        bool operator==(const py_vector& rhs)
+        bool operator==(const py_vector& rhs) const
         {
             return the_list_ == rhs.the_list_;
         }
-
+        
         template<class U,
             typename = std::enable_if_t<hana::equal(hana::intersection(types_set_, U::types_set_), U::types_set_)>>
-        bool operator==(const U& rhs)
+        bool operator==(const U& rhs) const
         {
-            return the_list_ == rhs.the_list_;
+            // since our containers hold different types, we need to do a little more work.
+            // I haven't found a way to directly compare the individual elements held by different variant
+            // types...it may not be possible.  But, it seems you can write the individual items to a std::stream.
+            // This will probably be sssllloooowwww.... for large numbers of elements in the list.
+             
+            if (the_list_.size() != rhs.the_list_.size())
+            {
+                return false;
+            }
+
+            if (the_list_.size() < MAX_LEN_FOR_QUICK_COMPARE)
+            {
+                // this should be faster for shorter strings due ot less ostringstream overhead
+                
+                auto x{to_string()};
+                auto y{rhs.to_string()};
+
+                return x == y;
+            }
+
+            auto compare_helper([this](auto&& a, auto&& b)
+            {
+                std::ostringstream x;
+                std::ostringstream y;
+
+                x << a;
+                y << b;
+
+                return x.str() == y.str();
+            });
+
+            auto compare_elements([&compare_helper](const auto& a, const auto& b)
+            {
+                return std::visit(compare_helper, a, b);
+            });
+
+            return std::equal(the_list_.cbegin(), the_list_.cend(), rhs.the_list_.cbegin(), compare_elements);
         }
 
     protected:

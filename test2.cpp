@@ -35,6 +35,7 @@ class Constructors : public Test
 TEST_F(Constructors, DefaultCtor)
 {
     py_vector<std::string, int, float> like_a_list; 
+    like_a_list.print_list(std::cout);
 
     ASSERT_THAT(like_a_list.empty(), Eq(true));
 }
@@ -42,6 +43,7 @@ TEST_F(Constructors, DefaultCtor)
 TEST_F(Constructors, InitializerListCtor)
 {
     py_vector<std::string, int, float> like_a_list{3, "ab", 5, 3.4f}; 
+    like_a_list.print_list(std::cout);
 
     ASSERT_EQ(like_a_list.size(), 4);
 }
@@ -49,7 +51,9 @@ TEST_F(Constructors, InitializerListCtor)
 TEST_F(Constructors, CopyCtorSameTypes)
 {
     py_vector<std::string, int, float> like_a_list{3, "ab", 5, 3.4f}; 
+    like_a_list.print_list(std::cout);
     py_vector<std::string, int, float> like_a_list2{like_a_list}; 
+    like_a_list2.print_list(std::cout);
 
     ASSERT_EQ(like_a_list == like_a_list2, true);
 }
@@ -57,9 +61,11 @@ TEST_F(Constructors, CopyCtorSameTypes)
 TEST_F(Constructors, CopyCtorDifferentTypes)
 {
     py_vector<int, float> like_a_list{3, 5, 3.4f}; 
+    like_a_list.print_list(std::cout);
     py_vector<float, std::string, int> like_a_list2{like_a_list}; 
+    like_a_list2.print_list(std::cout);
 
-    /* ASSERT_EQ(like_a_list == like_a_list2, true); */
+    ASSERT_EQ(like_a_list2.operator==(like_a_list), true);
 }
 
 int main(int argc, char *argv[])
