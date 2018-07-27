@@ -292,6 +292,9 @@ class py_vector
             // types...it may not be possible.  But, it seems you can write the individual items to a std::stream.
             // This will probably be sssllloooowwww.... for large numbers of elements in the list.
              
+            // TODO: look at MP11 generate test cases example and C++17 STL Cookbook tuple zipping as possible
+            // approaches to a better comparison.
+            
             if (the_list_.size() != rhs.the_list_.size())
             {
                 return false;
