@@ -29,10 +29,47 @@
 #include <typeinfo>
 #include <variant>
 #include <vector>
+#include <any>
 
 #include <boost/hana.hpp>
+#include <boost/mp11.hpp>
 
 namespace hana = boost::hana;
+namespace mp11 = boost::mp11;
+
+// I need to be able to compare 2 variants of different types.
+// The problem is that just using '==' leads to combinatorial 
+// explosion by the compiler generating lots of options that
+// aren't needed (and don't compile).  So the need is to focus on generating smaller
+// sets of possible comparisons.
+
+template<typename ...Ts, typename ...Us>
+bool operator==(const std::variant<Ts ...>& lhs, const std::variant<Us ...>& rhs)
+{
+    bool result{false};
+
+    mp11::mp_with_index<sizeof...(Ts)>(lhs.index(), [&](auto I)
+    {
+        auto x = std::get<I>(lhs);
+        using X = decltype(x);
+
+        mp11::mp_with_index<sizeof...(Us)>(rhs.index(), [&](auto J)
+        {
+            auto y = std::get<J>(rhs);
+            using Y = decltype(y);
+
+            if constexpr(! std::is_same_v<X, Y>)
+            {
+                result = false;
+            }
+            else
+            {
+                result = (x == y);
+            }
+        });
+    });
+    return result;
+}
 
 // let's try some template metaprogramming using boost Hana.
 // we need to be able to tell whether or not type list B
@@ -183,6 +220,18 @@ class py_vector
             return false;
         }
 
+        std::any value_at(int index)
+        {
+            const auto& e = the_list_[index];
+
+            std::any result;
+            mp11::mp_with_index<sizeof...(Ts)>(e.index(), [&](auto I)
+            {
+                result = std::get<I>(e);
+            });
+            return result;
+        }
+
         /* ====================  MUTATORS      ======================================= */
         
         py_vector& append(const py_vector& rhs)
@@ -287,45 +336,12 @@ class py_vector
             typename = std::enable_if_t<hana::equal(hana::intersection(types_set_, U::types_set_), U::types_set_)>>
         bool operator==(const U& rhs) const
         {
-            // since our containers hold different types, we need to do a little more work.
-            // I haven't found a way to directly compare the individual elements held by different variant
-            // types...it may not be possible.  But, it seems you can write the individual items to a std::stream.
-            // This will probably be sssllloooowwww.... for large numbers of elements in the list.
-             
-            // TODO: look at MP11 generate test cases example and C++17 STL Cookbook tuple zipping as possible
-            // approaches to a better comparison.
-            
-            if (the_list_.size() != rhs.the_list_.size())
+            // It appears I now have a proper way to compare to variants with different type signatures.
+
+            auto compare_elements([](const auto& a, const auto& b)
             {
-                return false;
-            }
-
-            if (the_list_.size() < MAX_LEN_FOR_QUICK_COMPARE)
-            {
-                // this should be faster for shorter strings due ot less ostringstream overhead
-                
-                auto x{to_string()};
-                auto y{rhs.to_string()};
-
-                return x == y;
-            }
-
-            auto compare_helper([this](auto&& a, auto&& b)
-            {
-                std::ostringstream x;
-                std::ostringstream y;
-
-                x << a;
-                y << b;
-
-                return x.str() == y.str();
+                return ::operator==(a, b);
             });
-
-            auto compare_elements([&compare_helper](const auto& a, const auto& b)
-            {
-                return std::visit(compare_helper, a, b);
-            });
-
             return std::equal(the_list_.cbegin(), the_list_.cend(), rhs.the_list_.cbegin(), compare_elements);
         }
 
