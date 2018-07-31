@@ -336,7 +336,7 @@ class py_vector
             typename = std::enable_if_t<hana::equal(hana::intersection(types_set_, U::types_set_), U::types_set_)>>
         bool operator==(const U& rhs) const
         {
-            // It appears I now have a proper way to compare to variants with different type signatures.
+            // It appears I now have a proper way to compare two variants with different type signatures.
 
             auto compare_elements([](const auto& a, const auto& b)
             {
