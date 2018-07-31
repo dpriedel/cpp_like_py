@@ -27,6 +27,40 @@ using namespace testing;
 
 using namespace std::string_literals;
 
+class Variants : public Test
+{
+};
+
+TEST_F(Variants, DefaultConstructedVariantsMayBeEqual)
+{
+    std::variant<int, std::string, float>x;
+    std::variant<float, int>y;
+    std::variant<int, float, std::string>z;
+
+    EXPECT_EQ((::operator==(x, y)), false);
+    ASSERT_EQ((::operator==(x, z)), true);
+};
+
+TEST_F(Variants, EqualContentsShouldBeEqual)
+{
+    std::variant<int, std::string, float>x{3};
+    std::variant<float, int>y{3};
+    std::variant<int, float, std::string>z{3};
+
+    EXPECT_EQ((::operator==(x, y)), true);
+    ASSERT_EQ((::operator==(x, z)), true);
+};
+
+TEST_F(Variants, DifferentContentsShouldNotBeEqual)
+{
+    std::variant<int, std::string, float>x{3};
+    std::variant<float, int>y{3.0f};
+    std::variant<int, float, std::string>z{std::string{"Hello World"}};
+
+    EXPECT_EQ((::operator==(x, y)), false);
+    ASSERT_EQ((::operator==(x, z)), false);
+};
+
 class Constructors : public Test
 {
 
@@ -65,7 +99,7 @@ TEST_F(Constructors, CopyCtorDifferentTypes)
     py_vector<float, std::string, int> like_a_list2{like_a_list}; 
     like_a_list2.print_list(std::cout);
 
-    ASSERT_EQ(like_a_list2.operator==(like_a_list), true);
+    ASSERT_EQ((like_a_list2 == like_a_list), true);
 }
 
 class Operators : public Test
@@ -123,6 +157,23 @@ TEST_F(Operators, Contains)
 
     EXPECT_FALSE(like_a_list.contains("Goodbye world"s));
     ASSERT_TRUE(like_a_list.contains('z'));
+}
+
+TEST_F(Operators, GetValue)
+{
+    py_vector<int, std::string, float, char> like_a_list{3, 5, 3.4f, 'z', 8.2f, "Hello World"}; 
+    like_a_list.print_list(std::cout);
+
+//    EXPECT_FALSE(like_a_list.contains("Goodbye world"s));
+
+    auto x = like_a_list.value_at(1);
+    if (x.type() == typeid((int{})))
+    {
+        int a{std::any_cast<int>(x)};
+        std:: cout << "got an int\n";
+    }
+
+    ASSERT_EQ(std::any_cast<int>(like_a_list.value_at(1)), 5);
 }
 
 int main(int argc, char *argv[])
