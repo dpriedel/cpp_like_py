@@ -4,3 +4,7 @@
 // our test executable
 test2
 Unit_Test
+
+# don't know what creates these
+
+*.plist
