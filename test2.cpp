@@ -37,8 +37,8 @@ TEST_F(Variants, DefaultConstructedVariantsMayBeEqual)
     std::variant<float, int>y;
     std::variant<int, float, std::string>z;
 
-    EXPECT_EQ((::operator==(x, y)), false);
-    ASSERT_EQ((::operator==(x, z)), true);
+    EXPECT_EQ((cpp_like_py::operator==(x, y)), false);
+    ASSERT_EQ((cpp_like_py::operator==(x, z)), true);
 };
 
 TEST_F(Variants, EqualContentsShouldBeEqual)
@@ -47,8 +47,8 @@ TEST_F(Variants, EqualContentsShouldBeEqual)
     std::variant<float, int>y{3};
     std::variant<int, float, std::string>z{3};
 
-    EXPECT_EQ((::operator==(x, y)), true);
-    ASSERT_EQ((::operator==(x, z)), true);
+    EXPECT_EQ((cpp_like_py::operator==(x, y)), true);
+    ASSERT_EQ((cpp_like_py::operator==(x, z)), true);
 };
 
 TEST_F(Variants, DifferentContentsShouldNotBeEqual)
@@ -57,8 +57,8 @@ TEST_F(Variants, DifferentContentsShouldNotBeEqual)
     std::variant<float, int>y{3.0f};
     std::variant<int, float, std::string>z{std::string{"Hello World"}};
 
-    EXPECT_EQ((::operator==(x, y)), false);
-    ASSERT_EQ((::operator==(x, z)), false);
+    EXPECT_EQ((cpp_like_py::operator==(x, y)), false);
+    ASSERT_EQ((cpp_like_py::operator==(x, z)), false);
 };
 
 class Constructors : public Test
@@ -147,6 +147,7 @@ TEST_F(Operators, Slice)
     auto x = like_a_list.slice(2, 5);
     x.print_list(std::cout);
     
+    EXPECT_EQ((x == py_vector<int, std::string, float, char>{3.4f, 'r', 8.2f}), false);
     ASSERT_EQ((x == py_vector<int, std::string, float, char>{3.4f, 'z', 8.2f}), true);
 }
 
@@ -173,7 +174,7 @@ TEST_F(Operators, GetValue)
         std:: cout << "got an int\n";
     }
 
-    ASSERT_EQ(std::any_cast<int>(like_a_list.value_at(1)), 5);
+    ASSERT_EQ(std::any_cast<decltype(5)>(like_a_list.value_at(1)), 5);
 }
 
 int main(int argc, char *argv[])

@@ -42,33 +42,37 @@ namespace mp11 = boost::mp11;
 // explosion by the compiler generating lots of options that
 // aren't needed (and don't compile).  So the need is to focus on generating smaller
 // sets of possible comparisons.
+// to avoid confusion, let's put this in a namespace.
 
-template<typename ...Ts, typename ...Us>
-bool operator==(const std::variant<Ts ...>& lhs, const std::variant<Us ...>& rhs)
+namespace cpp_like_py
 {
-    bool result{false};
-
-    mp11::mp_with_index<sizeof...(Ts)>(lhs.index(), [&](auto I)
+    template<typename ...Ts, typename ...Us>
+    bool operator==(const std::variant<Ts ...>& lhs, const std::variant<Us ...>& rhs)
     {
-        auto x = std::get<I>(lhs);
-        using X = decltype(x);
+        bool result{false};
 
-        mp11::mp_with_index<sizeof...(Us)>(rhs.index(), [&](auto J)
+        mp11::mp_with_index<sizeof...(Ts)>(lhs.index(), [&](auto I)
         {
-            auto y = std::get<J>(rhs);
-            using Y = decltype(y);
+            using X = std::variant_alternative_t<I, std::variant<Ts ...>>;
+            X x = std::get<I>(lhs);
 
-            if constexpr(! std::is_same_v<X, Y>)
+            mp11::mp_with_index<sizeof...(Us)>(rhs.index(), [&](auto J)
             {
-                result = false;
-            }
-            else
-            {
-                result = (x == y);
-            }
+                using Y = std::variant_alternative_t<J, std::variant<Us ...>>;
+                Y y = std::get<J>(rhs);
+
+                if constexpr(! std::is_same_v<X, Y>)
+                {
+                    result = false;
+                }
+                else
+                {
+                    result = (x == y);
+                }
+            });
         });
-    });
-    return result;
+        return result;
+    }
 }
 
 // let's try some template metaprogramming using boost Hana.
@@ -340,7 +344,7 @@ class py_vector
 
             auto compare_elements([](const auto& a, const auto& b)
             {
-                return ::operator==(a, b);
+                return cpp_like_py::operator==(a, b);
             });
             return std::equal(the_list_.cbegin(), the_list_.cend(), rhs.the_list_.cbegin(), compare_elements);
         }
