@@ -242,6 +242,9 @@ class py_vector
                     using X = std::variant_alternative_t<I, std::variant<Ts ...>>;
                     if constexpr (std::is_same_v<T, X>)
                     {
+                        // we take a reference here because we may
+                        // modify the values in our list.
+                        
                         X& x = std::get<I>(e);
                         func(x);
                     }
