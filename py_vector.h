@@ -107,7 +107,9 @@ class py_vector
         static constexpr inline auto types_list_ = hana::to_tuple(hana::tuple_t<Ts...>);
         static constexpr inline auto types_set_ = hana::make_set(hana::type_c<Ts>...);
         
-        const int MAX_LEN_FOR_QUICK_COMPARE = 20;
+        // keep mp11 happy too...
+        
+        using types_too_ = mp11::mp_unique<mp11::mp_list<Ts...>>;
 
     public:
 
@@ -224,16 +226,28 @@ class py_vector
             return false;
         }
 
-        std::any value_at(int index)
+        // this method will apply the supplied function to all list elements
+        // of the specified type.
+        
+        template<typename T, class F>
+        void visit_all(F& func)
         {
-            const auto& e = the_list_[index];
+            using good_type = mp11::mp_contains<types_too_, T>;
+            static_assert(std::is_same_v<good_type, mp11::mp_true>, "Type T must be in type signature of py_vector.");
 
-            std::any result;
-            mp11::mp_with_index<sizeof...(Ts)>(e.index(), [&](auto I)
+            auto apply_func([func](auto& e)
             {
-                result = std::get<I>(e);
+                mp11::mp_with_index<sizeof...(Ts)>(e.index(), [&](auto I)
+                {
+                    using X = std::variant_alternative_t<I, std::variant<Ts ...>>;
+                    if constexpr (std::is_same_v<T, X>)
+                    {
+                        X& x = std::get<I>(e);
+                        func(x);
+                    }
+                });
             });
-            return result;
+            std::for_each(the_list_.begin(), the_list_.end(), apply_func);
         }
 
         /* ====================  MUTATORS      ======================================= */

@@ -160,22 +160,22 @@ TEST_F(Operators, Contains)
     ASSERT_TRUE(like_a_list.contains('z'));
 }
 
-TEST_F(Operators, GetValue)
-{
-    py_vector<int, std::string, float, char> like_a_list{3, 5, 3.4f, 'z', 8.2f, "Hello World"}; 
-    like_a_list.print_list(std::cout);
-
-//    EXPECT_FALSE(like_a_list.contains("Goodbye world"s));
-
-    auto x = like_a_list.value_at(1);
-    if (x.type() == typeid((int{})))
-    {
-        int a{std::any_cast<int>(x)};
-        std:: cout << "got an int\n";
-    }
-
-    ASSERT_EQ(std::any_cast<decltype(5)>(like_a_list.value_at(1)), 5);
-}
+//TEST_F(Operators, GetValue)
+//{
+//    py_vector<int, std::string, float, char> like_a_list{3, 5, 3.4f, 'z', 8.2f, "Hello World"}; 
+//    like_a_list.print_list(std::cout);
+//
+////    EXPECT_FALSE(like_a_list.contains("Goodbye world"s));
+//
+//    auto x = like_a_list.value_at(1);
+//    if (x.type() == typeid((int{})))
+//    {
+//        int a{std::any_cast<int>(x)};
+//        std:: cout << "got an int\n";
+//    }
+//
+//    ASSERT_EQ(std::any_cast<decltype(5)>(like_a_list.value_at(1)), 5);
+//}
 
 TEST_F(Operators, EraseRange)
 {
@@ -186,6 +186,33 @@ TEST_F(Operators, EraseRange)
     like_a_list.print_list(std::cout);
 
     ASSERT_EQ((like_a_list == py_vector<int, std::string, float, char>{3, 5, "Hello World"}), true);
+}
+
+TEST_F(Operators, VisitAllStrings)
+{
+    py_vector<int, std::string, float, char> like_a_list{3, 5, "Hi, I'm Dave",  3.4f, 'z', 8.2f, "Hello World"}; 
+    like_a_list.print_list(std::cout);
+
+    std::vector<std::string> my_strings;
+
+    auto collect_strings([&my_strings] (const std::string& input) { my_strings.push_back(input); } );
+
+    like_a_list.visit_all<std::string>(collect_strings);
+
+    ASSERT_EQ(my_strings.size(), 2);
+}
+
+TEST_F(Operators, MultiplyAllFloats)
+{
+    py_vector<int, std::string, float, char> like_a_list{3, 5, "Hi, I'm Dave",  3.4f, 'z', 8.2f, "Hello World"}; 
+    like_a_list.print_list(std::cout);
+
+    auto multiply_floats([factor = 3.0f] (float& input) { input *= factor; } );
+
+    like_a_list.visit_all<float>(multiply_floats);
+    like_a_list.print_list(std::cout);
+
+    ASSERT_EQ((like_a_list == py_vector<int, std::string, float, char>{3, 5, "Hi, I'm Dave",  10.2f, 'z', 24.6f, "Hello World"}), true);
 }
 
 int main(int argc, char *argv[])
