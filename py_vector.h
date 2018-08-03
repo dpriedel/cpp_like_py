@@ -255,11 +255,13 @@ class py_vector
             return *this;
         }
 
-//        py_vector& erase(std::size_t which)
-//        {
-//            the_list_.erase(&the_list_[which], &the_list_[which + 1]);
-//            return *this;
-//        }
+        // half open range
+        
+        py_vector& erase(std::size_t from, std::size_t to)
+        {
+            the_list_.erase(the_list_.begin() + from, the_list_.begin() + to);
+            return *this;
+        }
 
         /* ====================  OPERATORS     ======================================= */
 

@@ -177,6 +177,17 @@ TEST_F(Operators, GetValue)
     ASSERT_EQ(std::any_cast<decltype(5)>(like_a_list.value_at(1)), 5);
 }
 
+TEST_F(Operators, EraseRange)
+{
+    py_vector<int, std::string, float, char> like_a_list{3, 5, 3.4f, 'z', 8.2f, "Hello World"}; 
+    like_a_list.print_list(std::cout);
+
+    like_a_list.erase(2, 5);
+    like_a_list.print_list(std::cout);
+
+    ASSERT_EQ((like_a_list == py_vector<int, std::string, float, char>{3, 5, "Hello World"}), true);
+}
+
 int main(int argc, char *argv[])
 {
    /* python has lists which can hold arbitrary types. 
