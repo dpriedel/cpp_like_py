@@ -212,7 +212,7 @@ TEST_F(Operators, MultiplyAllFloats)
     like_a_list.visit_all<float>(multiply_floats);
     like_a_list.print_list(std::cout);
 
-    ASSERT_EQ((like_a_list == py_vector<int, std::string, float, char>{3, 5, "Hi, I'm Dave",  10.2f, 'z', 24.6f, "Hello World"}), true);
+    ASSERT_EQ((like_a_list == py_vector<int, std::string, float, char>{3, 5, "Hi, I'm Dave",  (3.4f * 3.0f), 'z', (8.2f * 3.0f), "Hello World"}), true);
 }
 
 int main(int argc, char *argv[])
