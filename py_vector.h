@@ -140,7 +140,7 @@ class py_vector
             // our own type of variant elements which, thanks to check above, we know can handle
             // all the types possible in rhs.
            
-            auto copy_value([this](auto&& e)
+            auto copy_value([this](const auto& e)
             {
                 using X = std::remove_cv_t<std::remove_reference_t<decltype(e)>>;
                 value_type new_elem{std::in_place_type<X>, e};
@@ -235,9 +235,12 @@ class py_vector
             using good_type = mp11::mp_contains<types_too_, T>;
             static_assert(std::is_same_v<good_type, mp11::mp_true>, "Type T must be in type signature of py_vector.");
 
-            auto apply_func([func](auto& e)
+            auto apply_func([func](auto& elem)
             {
-                mp11::mp_with_index<sizeof...(Ts)>(e.index(), [&](auto I)
+                // we the index here rather than type since we can have multiple
+                // instances of a type in our type signature.
+                
+                mp11::mp_with_index<sizeof...(Ts)>(elem.index(), [&](auto I)
                 {
                     using X = std::variant_alternative_t<I, std::variant<Ts ...>>;
                     if constexpr (std::is_same_v<T, X>)
@@ -245,7 +248,7 @@ class py_vector
                         // we take a reference here because we may
                         // modify the values in our list.
                         
-                        X& x = std::get<I>(e);
+                        X& x = std::get<I>(elem);
                         func(x);
                     }
                 });
@@ -301,7 +304,7 @@ class py_vector
             
             pylist_t new_values;
             
-            auto copy_value([&new_values](auto&& e)
+            auto copy_value([&new_values](const auto& e)
             {
                 using X = std::remove_cv_t<std::remove_reference_t<decltype(e)>>;
                 value_type new_elem{std::in_place_type<X>, e};
