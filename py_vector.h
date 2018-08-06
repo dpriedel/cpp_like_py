@@ -153,6 +153,18 @@ class py_vector
              
             }
         }
+
+        template<class U,
+            typename = std::enable_if_t<hana::not_equal(hana::intersection(types_set_, U::types_set_), U::types_set_)>,
+            typename = int>
+        py_vector(const U& rhs)
+        {
+            // just use this to get a more understandable compile error if our type signatures at not compatible.
+           
+            static_assert(std::is_same_v<std::true_type, std::false_type>,
+                    "rhs py_vector type signature must be proper subset to copy construct.");
+        }
+
         template<typename ...Us> friend class py_vector;
 
         /* ====================  ACCESSORS     ======================================= */
@@ -319,6 +331,17 @@ class py_vector
 
             std::swap(this->the_list_, new_values);
             return *this;
+        }
+
+        template<class U,
+            typename = std::enable_if_t<hana::not_equal(hana::intersection(types_set_, U::types_set_), U::types_set_)>,
+            typename = int>
+        py_vector& operator=(const U& rhs)
+        {
+            // just use this to get a more understandable compile error if our type signatures at not compatible.
+           
+            static_assert(std::is_same_v<std::true_type, std::false_type>,
+                    "rhs py_vector type signature must be proper subset to copy assign.");
         }
 
         py_vector& operator=(py_vector&& rhs)

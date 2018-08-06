@@ -102,6 +102,20 @@ TEST_F(Constructors, CopyCtorDifferentTypes)
     ASSERT_EQ((like_a_list2 == like_a_list), true);
 }
 
+TEST_F(Constructors, DISABLED_CopyCtorIncompatibleTypes)
+{
+    py_vector<int, float> like_a_list{3, 5, 3.4f}; 
+    like_a_list.print_list(std::cout);
+    
+    // need to comment out the code below so the program will compile.
+    // even though test is dsabled, it still needs to compile.
+    //
+//    py_vector<std::string, int> like_a_list2{like_a_list}; 
+//    like_a_list2.print_list(std::cout);
+
+//    ASSERT_EQ((like_a_list2 == like_a_list), true);
+}
+
 class Operators : public Test
 {
 
@@ -125,6 +139,58 @@ TEST_F(Operators, AppendSingleElement)
     like_a_list.print_list(std::cout);
 
     ASSERT_EQ((like_a_list == py_vector<int, float, char>{3, 5, 3.4f, 'z'}), true);
+}
+
+TEST_F(Operators, AssignToEmptyListSameTypes)
+{
+    py_vector<std::string, int, float> like_a_list; 
+    like_a_list.print_list(std::cout);
+    py_vector<std::string, int, float> like_a_list2{3, "ab", 5, 3.4f}; 
+    like_a_list2.print_list(std::cout);
+
+    like_a_list = like_a_list2;
+    like_a_list.print_list(std::cout);
+
+    ASSERT_EQ(like_a_list, like_a_list2);
+}
+
+TEST_F(Operators, AssignToEmptyListCompatibleTypes)
+{
+    py_vector<std::string, int, float> like_a_list; 
+    like_a_list.print_list(std::cout);
+    py_vector<int, float> like_a_list2{3, 5, 3.4f}; 
+    like_a_list2.print_list(std::cout);
+
+    like_a_list = like_a_list2;
+    like_a_list.print_list(std::cout);
+
+    ASSERT_EQ(like_a_list, like_a_list2);
+}
+
+TEST_F(Operators, AssignToListCompatibleTypes)
+{
+    py_vector<std::string, int, float> like_a_list{3, "ab", 5, 3.4f}; 
+    like_a_list.print_list(std::cout);
+    py_vector<int, float> like_a_list2{3, 5, 3.4f}; 
+    like_a_list2.print_list(std::cout);
+
+    like_a_list = like_a_list2;
+    like_a_list.print_list(std::cout);
+
+    ASSERT_EQ(like_a_list, like_a_list2);
+}
+
+TEST_F(Operators, DISABLED_AssignToListIncompatibleTypes)
+{
+    py_vector<std::string, int, float> like_a_list{3, "ab", 5, 3.4f}; 
+    like_a_list.print_list(std::cout);
+    py_vector<int, float> like_a_list2{3, 5, 3.4f}; 
+    like_a_list2.print_list(std::cout);
+
+//    like_a_list2 = like_a_list;
+//    like_a_list.print_list(std::cout);
+//
+//    ASSERT_EQ(like_a_list, like_a_list2);
 }
 
 TEST_F(Operators, IndexOperatorGetAndSet)
@@ -159,23 +225,6 @@ TEST_F(Operators, Contains)
     EXPECT_FALSE(like_a_list.contains("Goodbye world"s));
     ASSERT_TRUE(like_a_list.contains('z'));
 }
-
-//TEST_F(Operators, GetValue)
-//{
-//    py_vector<int, std::string, float, char> like_a_list{3, 5, 3.4f, 'z', 8.2f, "Hello World"}; 
-//    like_a_list.print_list(std::cout);
-//
-////    EXPECT_FALSE(like_a_list.contains("Goodbye world"s));
-//
-//    auto x = like_a_list.value_at(1);
-//    if (x.type() == typeid((int{})))
-//    {
-//        int a{std::any_cast<int>(x)};
-//        std:: cout << "got an int\n";
-//    }
-//
-//    ASSERT_EQ(std::any_cast<decltype(5)>(like_a_list.value_at(1)), 5);
-//}
 
 TEST_F(Operators, EraseRange)
 {
