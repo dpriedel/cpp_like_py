@@ -222,17 +222,24 @@ class py_vector
             return result;
         }
 
-        template<typename T>
-        bool contains(const T& item) const
+        template<typename Y>
+        bool contains(const Y& item) const
         {
-            for (auto i = 0; i < the_list_.size(); ++i)
+            for (const auto& elem : the_list_)
             {
-                if (auto elem = std::get_if<T>(&the_list_[i]); elem)
+                bool result{false};
+                mp11::mp_with_index<sizeof...(Ts)>(elem.index(), [&](auto I)
                 {
-                    if (*elem == item)
+                    using X = std::variant_alternative_t<I, std::variant<Ts ...>>;
+                    if constexpr(std::is_same_v<X, Y>)
                     {
-                        return true;
+                        const X& x = std::get<I>(elem);
+                        result = (x == item);
                     }
+                });
+                if (result)
+                {
+                    return true;
                 }
             }
             return false;
