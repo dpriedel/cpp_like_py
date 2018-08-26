@@ -178,28 +178,20 @@ class py_vector
 
         void print_list(std::ostream& out) const
         {
-            auto print_item([&out](const auto& e) { out << e << ", "; });
-            auto print_just_item([&out](const auto& e) { out << e ; });
-            //TODO: fix this so it doesn't have a trailing ','.
+            auto print_item([&out](const auto& e) { out << ", " << e ; });
+            auto print_first_item([&out](const auto& e) { out << e ; });
             
             out << '[';
 
-            int x{1};
-            for (const auto e : the_list_)
-            {
-                if (x >= the_list_.size())
-                {
-                    break;
-                }
-                std::visit(print_item, e);
-                ++x;
-            }
-
             if (! the_list_.empty())
             {
-                std::visit(print_just_item, the_list_.back());
+                auto it = the_list_.cbegin();
+                std::visit(print_first_item, *it);
+                for(++it; it != the_list_.cend(); ++it)
+                {
+                    std::visit(print_item, *it);
+                }
             }
-
             out << "]\n";
         }
 
