@@ -12,7 +12,7 @@
             "-fPIC",
             "-I/home/dpriedel/projects/cpp_like_py",
             "-I/usr/local/include",
-            "-I/extra/boost/boost-1.68_gcc-8",
+            "-I/extra/boost/boost-1.70_gcc-8",
             "-march=native",
             "-o",
             "Debug_unit/test2.o",
