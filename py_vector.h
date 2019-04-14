@@ -17,10 +17,11 @@
  */
 
 
-#ifndef  py_vector_INC
-#define  py_vector_INC
+#ifndef  _PY_VECTOR_INC_
+#define  _PY_VECTOR_INC_
 
 #include <algorithm>
+#include <any>
 #include <functional>
 #include <iostream>
 #include <iterator>
@@ -29,12 +30,9 @@
 #include <typeinfo>
 #include <variant>
 #include <vector>
-#include <any>
 
-#include <boost/hana.hpp>
 #include <boost/mp11.hpp>
 
-namespace hana = boost::hana;
 namespace mp11 = boost::mp11;
 
 // I need to be able to compare 2 variants of different types.
@@ -73,7 +71,7 @@ namespace cpp_like_py
         });
         return result;
     }
-}
+}		/* -----  end of namespace cpp_like_py  ----- */
 
 // let's try some template metaprogramming using boost Hana.
 // we need to be able to tell whether or not type list B
@@ -100,17 +98,11 @@ namespace cpp_like_py
 // using T = std::remove_cv_t<std::remove_reference_t<decltype(val)>>;
 
 template<typename ...Ts>
+        using new_types_set_ = typename mp11::mp_unique<mp11::mp_list<Ts...>>;
+
+template<typename ...Ts>
 class py_vector
 {
-    private:
-
-        static constexpr inline auto types_list_ = hana::to_tuple(hana::tuple_t<Ts...>);
-        static constexpr inline auto types_set_ = hana::make_set(hana::type_c<Ts>...);
-        
-        // keep mp11 happy too...
-        
-        using types_too_ = mp11::mp_unique<mp11::mp_list<Ts...>>;
-
     public:
 
         using value_type = std::variant<Ts...>;
@@ -130,46 +122,46 @@ class py_vector
         
         py_vector(py_vector const volatile& rhs) = delete;
 
-        // now, make sure the we have all the types the class we are copying from does.
-        
-        template<class U,
-            typename = std::enable_if_t<hana::equal(hana::intersection(types_set_, U::types_set_), U::types_set_)>>
-        py_vector(const U& rhs)
+        template<typename ... Us>
+        py_vector(const py_vector<Us...>& rhs)
         {
-            // we can not simply copy the variant elements from the rhs vector, we need to use
-            // our own type of variant elements which, thanks to check above, we know can handle
-            // all the types possible in rhs.
-           
-            auto copy_value([this](const auto& e)
+            // now, make sure the we have all the types the class we are copying from does.
+            //
+            if constexpr(std::is_same_v<mp11::mp_size<mp11::mp_set_intersection<new_types_set_<Ts...>,
+                    new_types_set_<Us...>>>, mp11::mp_size<new_types_set_<Us...>>>)
             {
-                using X = std::remove_cv_t<std::remove_reference_t<decltype(e)>>;
-                value_type new_elem{std::in_place_type<X>, e};
-                this->the_list_.push_back(new_elem);
-             }); 
+                // we can not simply copy the variant elements from the rhs vector, we need to use
+                // our own type of variant elements which, thanks to check above, we know can handle
+                // all the types possible in rhs.
+               
+                auto copy_value([this](const auto& e)
+                {
+                    using X = std::remove_cv_t<std::remove_reference_t<decltype(e)>>;
+                    value_type new_elem{std::in_place_type<X>, e};
+                    this->the_list_.push_back(new_elem);
+                 }); 
 
-            for (const auto& r_element : rhs.the_list_)
-            {
-                std::visit(copy_value, r_element);
-             
+                for (const auto& r_element : rhs.the_list_)
+                {
+                    std::visit(copy_value, r_element);
+                 
+                }
             }
-        }
+            else
+            {
+                // just use this to get a more understandable compile error if our type signatures at not compatible.
+               
+                static_assert(std::is_same_v<std::true_type, std::false_type>,
+                        "rhs py_vector type signature must be proper subset to copy construct.");
+            }
 
-        template<class U,
-            typename = std::enable_if_t<hana::not_equal(hana::intersection(types_set_, U::types_set_), U::types_set_)>,
-            typename = int>
-        py_vector(const U& rhs)
-        {
-            // just use this to get a more understandable compile error if our type signatures at not compatible.
-           
-            static_assert(std::is_same_v<std::true_type, std::false_type>,
-                    "rhs py_vector type signature must be proper subset to copy construct.");
         }
 
         template<typename ...Us> friend class py_vector;
 
         /* ====================  ACCESSORS     ======================================= */
 
-        auto size(void) const { return the_list_.size(); }
+        auto size() const { return the_list_.size(); }
         auto begin() const { return the_list_.begin(); }
         auto cbegin() const { return the_list_.cbegin(); }
         auto end() const { return the_list_.end(); }
@@ -195,7 +187,7 @@ class py_vector
             out << "]\n";
         }
 
-        std::string to_string() const
+        [[nodiscard]] std::string to_string() const
         {
             std::ostringstream out;
             print_list(out);
@@ -243,7 +235,7 @@ class py_vector
         template<typename T, class F>
         void visit_all(F& func)
         {
-            using good_type = mp11::mp_contains<types_too_, T>;
+            using good_type = mp11::mp_contains<new_types_set_<Ts...>, T>;
             static_assert(std::is_same_v<good_type, mp11::mp_true>, "Type T must be in type signature of py_vector.");
 
             auto apply_func([func](auto& elem)
@@ -299,61 +291,66 @@ class py_vector
         py_vector& operator=(const py_vector& rhs)
         {
             if (this != &rhs)
+            {
                 the_list_ = rhs.the_list_;
-            return *this;
-        }
-
-        template<class U,
-            typename = std::enable_if_t<hana::equal(hana::intersection(types_set_, U::types_set_), U::types_set_)>>
-        py_vector& operator=(const U& rhs)
-        {
-            // we can not simply copy the variant elements from the rhs vector, we need to use
-            // our own type of variant elements which, thanks to check above, we know can handle
-            // all the types possible in rhs.
-           
-            // a little bit of exception safety.
-            
-            pylist_t new_values;
-            
-            auto copy_value([&new_values](const auto& e)
-            {
-                using X = std::remove_cv_t<std::remove_reference_t<decltype(e)>>;
-                value_type new_elem{std::in_place_type<X>, e};
-                new_values.push_back(new_elem);
-             }); 
-
-            for (const auto& r_element : rhs.the_list_)
-            {
-                std::visit(copy_value, r_element);
-             
             }
-
-            std::swap(this->the_list_, new_values);
             return *this;
         }
 
-        template<class U,
-            typename = std::enable_if_t<hana::not_equal(hana::intersection(types_set_, U::types_set_), U::types_set_)>,
-            typename = int>
-        py_vector& operator=(const U& rhs)
+        template<typename ... Us>
+        py_vector& operator=(const py_vector<Us...>& rhs)
         {
-            // just use this to get a more understandable compile error if our type signatures at not compatible.
-           
-            static_assert(std::is_same_v<std::true_type, std::false_type>,
-                    "rhs py_vector type signature must be proper subset to copy assign.");
+            if constexpr(std::is_same_v<mp11::mp_size<mp11::mp_set_intersection<new_types_set_<Ts...>,
+                    new_types_set_<Us...>>>, mp11::mp_size<new_types_set_<Us...>>>)
+            {
+                // we can not simply copy the variant elements from the rhs vector, we need to use
+                // our own type of variant elements which, thanks to check above, we know can handle
+                // all the types possible in rhs.
+               
+                // a little bit of exception safety.
+                
+                pylist_t new_values;
+                
+                auto copy_value([&new_values](const auto& e)
+                {
+                    using X = std::remove_cv_t<std::remove_reference_t<decltype(e)>>;
+                    value_type new_elem{std::in_place_type<X>, e};
+                    new_values.push_back(new_elem);
+                 }); 
+
+                for (const auto& r_element : rhs.the_list_)
+                {
+                    std::visit(copy_value, r_element);
+                 
+                }
+
+                std::swap(this->the_list_, new_values);
+                return *this;
+            }
+            else
+            {
+                // just use this to get a more understandable compile error if our type signatures at not compatible.
+               
+                static_assert(std::is_same_v<std::true_type, std::false_type>,
+                        "rhs py_vector type signature must be proper subset to copy assign.");
+            }
         }
 
         py_vector& operator=(py_vector&& rhs)
         {
             if (this != &rhs)
+            {
                 the_list_ = std::move(rhs.the_list_);
+            }
             return *this;
         }
 
         py_vector& operator+=(const py_vector& rhs)
         {
             if (this != &rhs)
+            {
                 this->append(rhs);
+            }
             return *this;
         }
 
@@ -380,17 +377,29 @@ class py_vector
             return the_list_ == rhs.the_list_;
         }
         
-        template<class U,
-            typename = std::enable_if_t<hana::equal(hana::intersection(types_set_, U::types_set_), U::types_set_)>>
-        bool operator==(const U& rhs) const
+        template<typename ... Us>
+        bool operator==(const py_vector<Us...>& rhs) const
         {
-            // It appears I now have a proper way to compare two variants with different type signatures.
-
-            auto compare_elements([](const auto& a, const auto& b)
+            if constexpr(std::is_same_v<mp11::mp_size<mp11::mp_set_intersection<new_types_set_<Ts...>,
+                    new_types_set_<Us...>>>, mp11::mp_size<new_types_set_<Us...>>>)
             {
-                return cpp_like_py::operator==(a, b);
-            });
-            return std::equal(the_list_.cbegin(), the_list_.cend(), rhs.the_list_.cbegin(), compare_elements);
+                // It appears I now have a proper way to compare two variants with different type signatures.
+
+                auto compare_elements([](const auto& a, const auto& b)
+                {
+                    return cpp_like_py::operator==(a, b);
+                });
+                return std::equal(the_list_.cbegin(), the_list_.cend(), rhs.the_list_.cbegin(), compare_elements);
+            }
+            else
+            {
+                // just use this to get a more understandable compile error if our type signatures at not compatible.
+               
+                static_assert(std::is_same_v<std::true_type, std::false_type>,
+                        "rhs py_vector type signature must be proper subset to test equivalence.");
+
+                return false;
+            }
         }
 
     protected:
@@ -406,4 +415,4 @@ class py_vector
 
 }; /* ----------  end of template class py_vector  ---------- */
 
-#endif   /* ----- #ifndef py_vector_INC  ----- */
+#endif   /* ----- #ifndef PY_VECTOR_INC  ----- */
