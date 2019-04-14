@@ -8,3 +8,5 @@ Unit_Test
 # don't know what creates these
 
 *.plist
+
+.ccls-cache
