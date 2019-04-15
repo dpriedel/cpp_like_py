@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <any>
 #include <functional>
+#include <initializer_list>
 #include <iostream>
 #include <iterator>
 #include <sstream>
@@ -73,7 +74,7 @@ namespace cpp_like_py
     }
 }		/* -----  end of namespace cpp_like_py  ----- */
 
-// let's try some template metaprogramming using boost Hana.
+// let's try some template metaprogramming using boost MP11.
 // we need to be able to tell whether or not type list B
 // is a proper subset of type list A so we know whether or not we
 // can safely do py_vector copy ctors, assigments and other operation when the 
@@ -109,12 +110,15 @@ class py_vector
         using pylist_t = std::vector<value_type>;
 
         /* ====================  LIFECYCLE     ======================================= */
-        py_vector () { }                                                  /* constructor */
+        py_vector () = default;                                              /* constructor */
+        ~py_vector () = default;
+
         template<typename ...Args>
-        py_vector (Args ...args) : the_list_{{args} ...} { }              /* constructor */
+        explicit py_vector (Args ...args) : the_list_{{args} ...} { }              /* constructor */
+        py_vector (std::initializer_list<value_type> values) : the_list_{values} {}
 
         py_vector(const py_vector& rhs) : the_list_{rhs.the_list_} { }
-        py_vector(py_vector&& rhs) : the_list_{std::move(rhs.the_list_)} { }
+        py_vector(py_vector&& rhs) noexcept : the_list_{std::move(rhs.the_list_)} { }
 
         // now, let's try some metaprogramming....
         // NOTE: per "C++ Templates the Complete Guide, 2nd ed." (pp.102,103), this is necessary to force use
@@ -123,7 +127,7 @@ class py_vector
         py_vector(py_vector const volatile& rhs) = delete;
 
         template<typename ... Us>
-        py_vector(const py_vector<Us...>& rhs)
+        explicit py_vector(const py_vector<Us...>& rhs)
         {
             // now, make sure the we have all the types the class we are copying from does.
             //
@@ -270,6 +274,12 @@ class py_vector
             return *this;
         }
 
+        py_vector& append(std::initializer_list<value_type> new_values)
+        {
+            std::copy(new_values.begin(), new_values.end(), std::back_inserter(the_list_));
+            return *this;
+        }
+
         template<typename T>
         py_vector& append(const T& element)
         {
@@ -336,7 +346,7 @@ class py_vector
             }
         }
 
-        py_vector& operator=(py_vector&& rhs)
+        py_vector& operator=(py_vector&& rhs) noexcept
         {
             if (this != &rhs)
             {
